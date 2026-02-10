@@ -3,40 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sınıf Ödev Takip Sistemi</title>
+    <title>Sınıf Ödev Takip</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
-        h2 { color: #1d4ed8; text-align: center; margin-bottom: 20px; }
-        input, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { background-color: #2563eb; color: white; border: none; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        button:hover { background-color: #1e40af; }
-        .odev-card { background: #ffffff; border-left: 6px solid #2563eb; padding: 15px; margin-top: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .info b { display: block; font-size: 1.1em; color: #1e293b; }
-        .info span { font-size: 0.9em; color: #64748b; display: block; margin-top: 4px; }
-        .info small { color: #ef4444; font-weight: bold; }
-        .counter-section { text-align: center; min-width: 80px; }
-        .done-btn { background: #10b981; width: 50px; height: 50px; border-radius: 50%; font-size: 20px; margin-bottom: 5px; padding: 0; }
-        .count-text { font-size: 12px; font-weight: bold; color: #334155; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        h2 { color: #2563eb; text-align: center; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { background-color: #2563eb; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .odev-card { background: #fff; border-left: 5px solid #2563eb; padding: 15px; margin-top: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .info b { display: block; font-size: 1.1em; }
+        .counter-section { text-align: center; }
+        .done-btn { background: #10b981; width: 45px; height: 45px; border-radius: 50%; font-size: 18px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>📚 Ödev Ekle</h2>
-    <input type="text" id="ders" placeholder="Ders Adı (Örn: Matematik)">
+    <input type="text" id="ders" placeholder="Ders Adı">
     <input type="text" id="konu" placeholder="Ödev Konusu">
     <input type="date" id="tarih">
     <button onclick="ekle()">Listeye Kaydet</button>
 
     <div id="liste">
-        <p style="text-align: center; color: #888; margin-top: 20px;">Yükleniyor...</p>
+        <p style="text-align: center; color: #888;">Yükleniyor...</p>
     </div>
 </div>
 
 <script>
-    // VERDİĞİN BİLGİLER OTOMATİK YERLEŞTİRİLDİ
+    // VERDİĞİN BİLGİLER BURAYA EKLENDİ
     const URL = "https://pcciifqxutljwmqdzmae.supabase.co";
     const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjY2lpZnF4dXRsandtcWR6bWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MTY2NTAsImV4cCI6MjA4NjI5MjY1MH0.A_tkF3RyuPOmQ-bTrNrqluF_YXIfQ_08xL7VC_24Xgg";
     const _db = supabase.createClient(URL, KEY);
@@ -46,26 +42,26 @@
         const { data, error } = await _db.from('odevler').select('*').order('teslim_tarihi', { ascending: true });
         
         if (error) {
-            div.innerHTML = `<p style="color:red; font-weight:bold;">Bağlantı Hatası: ${error.message}</p>`;
+            div.innerHTML = `<p style="color:red;">Hata: ${error.message}</p>`;
             return;
         }
 
-        div.innerHTML = "<h3 style='margin-top:20px;'>⏳ Güncel Ödevler</h3>";
+        div.innerHTML = "<h3>⏳ Ödevler</h3>";
         data.forEach(item => {
             div.innerHTML += `
                 <div class="odev-card">
                     <div class="info">
                         <b>${item.ders_adi}</b>
-                        <span>${item.odev_konusu}</span>
-                        <small>📅 Son Gün: ${item.teslim_tarihi}</small>
+                        <span>${item.odev_konusu}</span><br>
+                        <small>📅 ${item.teslim_tarihi}</small>
                     </div>
                     <div class="counter-section">
                         <button class="done-btn" onclick="artir(${item.id}, ${item.yapan_sayisi})">✅</button>
-                        <div class="count-text">${item.yapan_sayisi || 0} Kişi Yaptı</div>
+                        <div style="font-size:12px; font-weight:bold;">${item.yapan_sayisi || 0} Kişi</div>
                     </div>
                 </div>`;
         });
-        if(data.length === 0) div.innerHTML += "<p style='text-align:center; color:#64748b;'>Henüz ödev eklenmemiş.</p>";
+        if(data.length === 0) div.innerHTML += "<p>Henüz ödev yok.</p>";
     }
 
     async function ekle() {
@@ -73,9 +69,24 @@
         const k = document.getElementById('konu').value;
         const t = document.getElementById('tarih').value;
 
-        if(!d || !k || !t) return alert("Lütfen tüm alanları doldur!");
+        if(!d || !k || !t) return alert("Boş bırakma!");
 
         const { error } = await _db.from('odevler').insert([{ 
-            ders_adi: d, 
-            odev_konusu: k,
+            ders_adi: d, odev_konusu: k, teslim_tarihi: t, yapan_sayisi: 0 
+        }]);
+
+        if (error) alert("Hata: " + error.message);
+        else { listele(); }
+    }
+
+    async function artir(id, suanki) {
+        const { error } = await _db.from('odevler').update({ yapan_sayisi: (suanki || 0) + 1 }).eq('id', id);
+        if (!error) listele();
+    }
+
+    listele();
+</script>
+
+</body>
+</html>
 
