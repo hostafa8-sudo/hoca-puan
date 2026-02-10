@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sınıf Ödev Takibi</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        h2 { color: #3ecf8e; text-align: center; margin-bottom: 20px; }
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        input, button { padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; }
+        button { background: #3ecf8e; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #34b27b; }
+        ul { list-style: none; padding: 0; margin-top: 25px; }
+        li { background: #fff; border-left: 5px solid #3ecf8e; margin-bottom: 10px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .task-info { display: flex; flex-direction: column; }
+        .task-text { font-weight: bold; font-size: 1.1rem; color: #333; }
+        .task-date { font-size: 0.8rem; color: #e63946; margin-top: 5px; font-weight: 500; }
+        .delete-btn { color: #888; cursor: pointer; font-size: 1.2rem; border: none; background: none; width: auto; padding: 0; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>📚 Ortak Ödev Panosu</h2>
+    <div class="input-group">
+        <input type="text" id="taskInput" placeholder="Ödev adını yazın...">
+        <input type="date" id="dateInput">
+        <button onclick="addTask()">Ödevi Herkese Yayınla</button>
+    </div>
+    <ul id="taskList"></ul>
+</div>
+
+<script>
+    // Senin Supabase Bilgilerin
+    const SUB_URL = "https://xuvrtgvzosobhwpyglsz.supabase.co";
+    const SUB_KEY = "sb_publishable_uyuYnuRcWL4dxgsBp_lA7w_9KBjIt1s";
+    const supabaseClient = supabase.createClient(SUB_URL, SUB_KEY);
+
+    // Verileri 7/24 Buluttan Getir
+    async function loadTasks() {
+        let { data: odevler, error } = await supabaseClient
+            .from('odevler')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error("Hata:", error);
+            return;
+        }
+
+        const list = document.getElementById('taskList');
+        list.innerHTML = '';
+        odevler.forEach(item => {
+            list.innerHTML += `
+                <li>
+                    <div class="task-info">
+                        <span class="task-text">${item.text}</span>
+                        <span class="task-date">⏳ Son Tarih: ${item.deadline || 'Belirtilmedi'}</span>
+                    </div>
+                    <button class="delete-btn" onclick="deleteTask(${item.id})">&times;</button>
+                </li>`;
+        });
+    }
+
+    // Yeni Ödev Ekle
+    async function addTask() {
+        const textInput = document.getElementById('taskInput');
+        const dateInput = document.getElementById('dateInput');
+        
+        if(!textInput.value.trim()) {
+            alert("Lütfen ödev adını yazın!");
+            return;
+        }
+
+        const { error } = await supabaseClient
+            .from('odevler')
+            .insert([{ 
+                text: textInput.value, 
+                deadline: dateInput.value || "Belirtilmedi" 
+            }]);
+
+        if(error) {
+            alert("Hata oluştu! RLS ayarlarını kontrol ettin mi?");
+        } else {
+            textInput.value = '';
+            dateInput.value = '';
+            loadTasks();
+        }
+    }
+
+    // Ödev Sil
+    async function deleteTask(id) {
+        const { error } = await supabaseClient
+            .from('odevler')
+            .delete()
+            .eq('id', id);
+        
+        if(!error) loadTasks();
+    }
+
+    // Sayfa açıldığında verileri çek
+    loadTasks();
+</script>
+</body>
+</html>
+
