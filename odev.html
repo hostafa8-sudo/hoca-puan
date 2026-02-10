@@ -3,67 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sınıf Ödev Takip & Sayaç</title>
+    <title>Sınıf Ödev Takip</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; margin-bottom: 20px; }
-        h2 { color: #1a73e8; text-align: center; margin-top: 0; }
-        label { font-weight: bold; display: block; margin-top: 10px; color: #444; }
-        input, button { width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { background-color: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button:hover { background-color: #219150; }
-        
-        .odev-listesi-konteynir { width: 100%; max-width: 450px; }
-        .odev-item { background: white; border-left: 6px solid #3498db; padding: 15px; margin-bottom: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .odev-info b { display: block; color: #2c3e50; font-size: 1.1em; }
-        .odev-info span { font-size: 0.95em; color: #555; display: block; margin: 4px 0; }
-        .odev-info small { color: #e74c3c; font-weight: bold; }
-        
-        .sayac-alani { display: flex; flex-direction: column; align-items: center; min-width: 90px; }
-        .onay-butonu { background-color: #3498db; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; border: none; cursor: pointer; }
-        .sayi-etiket { font-size: 12px; font-weight: bold; color: #2c3e50; margin-top: 5px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        h2 { color: #2563eb; text-align: center; margin-bottom: 20px; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { background-color: #2563eb; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background-color: #1d4ed8; }
+        .odev-card { background: #fff; border-left: 5px solid #2563eb; padding: 15px; margin-top: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .info b { display: block; font-size: 1.1em; color: #1e293b; }
+        .info span { font-size: 0.9em; color: #64748b; }
+        .counter-section { text-align: center; }
+        .done-btn { background: #10b981; width: 45px; height: 45px; border-radius: 50%; font-size: 18px; margin-bottom: 5px; }
+        .count-text { font-size: 11px; font-weight: bold; color: #475569; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>📚 Ödev Ekle</h2>
-        <label>Ders Adı:</label>
-        <input type="text" id="dersAdi" placeholder="Örn: Matematik">
-        
-        <label>Ödev Konusu:</label>
-        <input type="text" id="odevKonusu" placeholder="Örn: Sayfa 45-50 arası">
-        
-        <label>Teslim Tarihi:</label>
-        <input type="date" id="teslimTarihi">
-        
-        <button onclick="odevEkle()">Listeye Ekle</button>
+<div class="container">
+    <h2>📚 Ödev Ekle</h2>
+    <input type="text" id="ders" placeholder="Ders Adı">
+    <input type="text" id="konu" placeholder="Ödev Konusu">
+    <input type="date" id="tarih">
+    <button onclick="ekle()">Listeye Kaydet</button>
+
+    <div id="liste">
+        <p style="text-align: center; color: #888;">Yükleniyor...</p>
     </div>
+</div>
 
-    <div class="odev-listesi-konteynir">
-        <h3>⏳ Güncel Ödevler</h3>
-        <div id="odevListesi">Yükleniyor...</div>
-    </div>
+<script>
+    // YENİ BİLGİLERİNİ BURAYA YAZ
+    const URL = "https://pcciifqxutljwmqdzmae.supabase.co";
+    const KEY = "sb_publishable_QXpcQl5WKUHhPBTAzzDX4A_PM932FTa";
+    const _db = supabase.createClient(URL, KEY);
 
-    <script>
-        // KENDİ BİLGİLERİNİ YAPIŞTIR
-        const SUPABASE_URL = "https://pcciifqxutljwmqdzmae.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_QXpcQl5WKUHhPBTAzzDX4A_PM932FTa";
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    async function listele() {
+        const { data, error } = await _db.from('odevler').select('*').order('teslim_tarihi', { ascending: true });
+        const div = document.getElementById('liste');
+        
+        if (error) {
+            div.innerHTML = "<p>Hata: " + error.message + "</p>";
+            return;
+        }
 
-        async function odevleriGetir() {
-            const { data, error } = await _supabase
-                .from('odevler')
-                .select('*')
-                .order('teslim_tarihi', { ascending: true });
+        div.innerHTML = "<h3>⏳ Ödevler</h3>";
+        data.forEach(item => {
+            div.innerHTML += `
+                <div class="odev-card">
+                    <div class="info">
+                        <b>${item.ders_adi}</b>
+                        <span>${item.odev_konusu}</span>
+                        <small>📅 ${item.teslim_tarihi}</small>
+                    </div>
+                    <div class="counter-section">
+                        <button class="done-btn" onclick="artir(${item.id}, ${item.yapan_sayisi})">✅</button>
+                        <div class="count-text">${item.yapan_sayisi || 0} Kişi</div>
+                    </div>
+                </div>`;
+        });
+        if(data.length === 0) div.innerHTML += "<p>Henüz ödev yok.</p>";
+    }
 
-            const listeDiv = document.getElementById('odevListesi');
-            if (error) {
-                listeDiv.innerHTML = 'Veriler çekilemedi!';
-            } else {
-                listeDiv.innerHTML = '';
-                data.forEach(odev => {
-                    listeDiv.innerHTML += `
-                        <div class="odev-
+    async function ekle() {
+        const d = document.getElementById('ders').value;
+        const k = document.getElementById('konu').value;
+        const t = document.getElementById('tarih').value;
+
+        if(!d || !k || !t) return alert("Alanları doldur!");
+
+        const { error } = await _db.from('odevler').insert([{ 
+            ders_adi: d, odev_konusu: k, teslim_tarihi: t, yapan_sayisi: 0 
+        }]);
+
+        if (error) alert("Ekleme hatası!");
+        else { listele(); document.getElementById('konu').value = ""; }
+    }
+
+    async function artir(id, suanki) {
+        const { error } = await _db.from('odevler').update({ yapan_sayisi: (suanki || 0) + 1 }).eq('id', id);
+        if (!error) listele();
+    }
+
+    listele();
+</script>
+
+</body>
+</html>
 
