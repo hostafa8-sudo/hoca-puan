@@ -1,0 +1,101 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sınıf Ödev Takip</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; max-width: 450px; margin-bottom: 20px; }
+        h2 { color: #2c3e50; text-align: center; margin-top: 0; }
+        input, select, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { background-color: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #219150; }
+        
+        .odev-item { background: #fff; border-left: 5px solid #e74c3c; padding: 15px; margin-bottom: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .odev-item.completed { border-left-color: #2ecc71; opacity: 0.7; }
+        .odev-info b { display: block; color: #2c3e50; }
+        .odev-info span { font-size: 0.9em; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>📚 Yeni Ödev Ekle</h2>
+        <input type="text" id="dersAdi" placeholder="Dersin Adı (Örn: Matematik)">
+        <input type="text" id="odevKonusu" placeholder="Ödev Konusu">
+        <input type="date" id="teslimTarihi">
+        <button onclick="odevEkle()">Listeye Ekle</button>
+    </div>
+
+    <div style="width: 100%; max-width: 450px;">
+        <h3>⏳ Aktif Ödevler</h3>
+        <div id="odevListesi">Yükleniyor...</div>
+    </div>
+
+    <script>
+        // Supabase Bilgilerini Buraya Gir
+        const SUPABASE_URL = "https://pcciifqxutljwmqdzmae.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_QXpcQl5WKUHhPBTAzzDX4A_PM932FTa";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function odevleriGetir() {
+            const { data, error } = await _supabase
+                .from('odevler')
+                .select('*')
+                .order('teslim_tarihi', { ascending: true });
+
+            const listeDiv = document.getElementById('odevListesi');
+            if (error) {
+                listeDiv.innerHTML = 'Hata oluştu.';
+            } else {
+                listeDiv.innerHTML = '';
+                data.forEach(odev => {
+                    const statusClass = odev.yapildi ? 'completed' : '';
+                    listeDiv.innerHTML += `
+                        <div class="odev-item ${statusClass}">
+                            <div class="odev-info">
+                                <b>${odev.ders_adi}</b>
+                                <span>${odev.odev_konusu}</span>
+                                <small>📅 ${odev.teslim_tarihi}</small>
+                            </div>
+                            <input type="checkbox" ${odev.yapildi ? 'checked' : ''} onchange="durumGuncelle(${odev.id}, this.checked)">
+                        </div>`;
+                });
+            }
+        }
+
+        async function odevEkle() {
+            const ders = document.getElementById('dersAdi').value;
+            const konu = document.getElementById('odevKonusu').value;
+            const tarih = document.getElementById('teslimTarihi').value;
+
+            if(!ders || !konu) return alert("Boş bırakma!");
+
+            const { error } = await _supabase
+                .from('odevler')
+                .insert([{ ders_adi: ders, odev_konusu: konu, teslim_tarihi: tarih, yapildi: false }]);
+
+            if (error) alert("Hata!");
+            else {
+                document.getElementById('odevKonusu').value = '';
+                odevleriGetir();
+            }
+        }
+
+        async function durumGuncelle(id, durum) {
+            const { error } = await _supabase
+                .from('odevler')
+                .update({ yapildi: durum })
+                .eq('id', id);
+            
+            if (!error) odevleriGetir();
+        }
+
+        odevleriGetir();
+    </script>
+</body>
+</html>
+
