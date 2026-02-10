@@ -7,108 +7,112 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        h2 { color: #1e88e5; text-align: center; }
-        label { font-weight: bold; display: block; margin-top: 15px; color: #333; }
-        select, textarea, button { width: 100%; padding: 12px; margin-top: 8px; border-radius: 8px; border: 1px solid #ddd; font-size: 15px; box-sizing: border-box; }
-        textarea { height: 80px; resize: none; }
-        button { background-color: #1e88e5; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 20px; transition: 0.2s; }
-        button:hover { background-color: #1565c0; }
-        .yorum-kart { background: #fff; border-left: 5px solid #1e88e5; padding: 15px; margin-top: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); width: 100%; max-width: 400px; }
-        .puan-yildiz { color: #fbc02d; font-weight: bold; }
+        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin-bottom: 20px; }
+        h2 { color: #1a73e8; text-align: center; margin-top: 0; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: #333; }
+        select, textarea, button { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        textarea { height: 100px; resize: none; }
+        button { background-color: #1a73e8; color: white; border: none; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        button:hover { background-color: #1557b0; }
+        
+        #yorumListesi { width: 100%; max-width: 400px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .yorum-kutusu { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .yorum-kutusu:last-child { border-bottom: none; }
+        .yorum-hoca { font-weight: bold; color: #1a73e8; display: block; }
+        .yorum-yildiz { color: #f39c12; font-size: 14px; }
+        .yorum-metni { margin: 8px 0; color: #555; line-height: 1.4; }
+        .yorum-tarih { font-size: 12px; color: #999; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h2>👨‍🏫 Hoca Puanla</h2>
-    
-    <label>Hoca Seç:</label>
-    <select id="hoca">
-        <option>GÜVEN HOCA</option>
-        <option>HASAN HOCA</option>
-        <option>CELAL HOCA</option>
-        <option>ERDAL HOCA</option>
-        <option>MERAL HOCA</option>
-        <option>SELVİ HOCA</option>
-        <option>EMİNE HOCA</option>
-        <option>CEMİLE HOCA</option>
-    </select>
+    <div class="container">
+        <h2>👨‍🏫 Hoca Puanla</h2>
+        
+        <label>Hoca Seç:</label>
+        <select id="hocaSec">
+            <option value="GÜVEN HOCA">GÜVEN HOCA</option>
+            <option value="HASAN HOCA">HASAN HOCA</option>
+            <option value="CELAL HOCA">CELAL HOCA</option>
+            <option value="ERDAL HOCA">ERDAL HOCA</option>
+            <option value="MERAL HOCA">MERAL HOCA</option>
+            <option value="SELVİ HOCA">SELVİ HOCA</option>
+            <option value="EMİNE HOCA">EMİNE HOCA</option>
+            <option value="CEMİLE HOCA">CEMİLE HOCA</option>
+        </select>
 
-    <label>Puan:</label>
-    <select id="puan">
-        <option value="5">⭐⭐⭐⭐⭐ (5)</option>
-        <option value="4">⭐⭐⭐⭐ (4)</option>
-        <option value="3">⭐⭐⭐ (3)</option>
-        <option value="2">⭐⭐ (2)</option>
-        <option value="1">⭐ (1)</option>
-    </select>
+        <label>Puan:</label>
+        <select id="puanSec">
+            <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+            <option value="4">⭐⭐⭐⭐ (4)</option>
+            <option value="3">⭐⭐⭐ (3)</option>
+            <option value="2">⭐⭐ (2)</option>
+            <option value="1">⭐ (1)</option>
+        </select>
 
-    <label>Yorumun:</label>
-    <textarea id="yorum" placeholder="Hoca hakkında ne düşünüyorsun?"></textarea>
-    
-    <button onclick="gonder()">Puanı Gönder</button>
-</div>
+        <label>Yorumun:</label>
+        <textarea id="yorumMetni" placeholder="Hoca hakkında ne düşünüyorsun?"></textarea>
 
-<div id="liste">
+        <button onclick="puanGonder()">Puanı Gönder</button>
     </div>
 
-<script>
-    // --- SUPABASE AYARLARI ---
-    // Buradaki tırnak içlerini Supabase Settings > API kısmındaki bilgilerle doldur!
-    const URL = "https://pcciifqxutljwmqdzmae.supabase.co"; 
-    const KEY = "sb_publishable_QXpcQl5WKUHhPBTAzzDX4A_PM932FTa";
-    const supabaseClient = supabase.createClient(URL, KEY);
+    <div id="yorumListesi">
+        <h3>💬 Son Yorumlar</h3>
+        <div id="liste">Yükleniyor...</div>
+    </div>
 
-    // --- VERİ GÖNDERME ---
-    async function gonder() {
-        const hocaAdi = document.getElementById('hoca').value;
-        const yorumMetni = document.getElementById('yorum').value;
-        const puanDegeri = document.getElementById('puan').value;
+    <script>
+        // BURAYI KENDİ BİLGİLERİNLE DOLDURMAYI UNUTMA
+        const SUPABASE_URL = 'https://PROJE_ID.supabase.co';
+        const SUPABASE_KEY = 'ANON_KEY_BURAYA';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        if(!yorumMetni) return alert("Lütfen bir yorum yaz!");
+        async function yorumlariGetir() {
+            const { data, error } = await _supabase
+                .from('yorumlar')
+                .select('*')
+                .order('created_at', { ascending: false });
 
-        const { error } = await supabaseClient
-            .from('yorumlar') // Tablo isminin 'yorumlar' olduğundan emin ol
-            .insert([{ hoca_adi: hocaAdi, yorum_metni: yorumMetni, puan: parseInt(puanDegeri) }]);
-
-        if (error) {
-            alert("Hata oluştu: " + error.message);
-        } else {
-            alert("Puanın başarıyla kaydedildi!");
-            document.getElementById('yorum').value = "";
-            yorumlariGetir(); // Listeyi yenile
+            const listeDiv = document.getElementById('liste');
+            if (error) {
+                listeDiv.innerHTML = 'Yorumlar yüklenemedi.';
+            } else {
+                listeDiv.innerHTML = '';
+                data.forEach(item => {
+                    listeDiv.innerHTML += `
+                        <div class="yorum-kutusu">
+                            <span class="yorum-hoca">${item.hoca_adi}</span>
+                            <span class="yorum-yildiz">${'⭐'.repeat(item.puan)}</span>
+                            <p class="yorum-metni">${item.yorum_metni}</p>
+                            <span class="yorum-tarih">${new Date(item.created_at).toLocaleString('tr-TR')}</span>
+                        </div>`;
+                });
+                if(data.length === 0) listeDiv.innerHTML = 'Henüz yorum yapılmamış.';
+            }
         }
-    }
 
-    // --- VERİLERİ LİSTELEME ---
-    async function yorumlariGetir() {
-        const listeDiv = document.getElementById('liste');
-        
-        const { data, error } = await supabaseClient
-            .from('yorumlar')
-            .select('*')
-            .order('id', { ascending: false });
+        async function puanGonder() {
+            const hoca = document.getElementById('hocaSec').value;
+            const puan = document.getElementById('puanSec').value;
+            const yorum = document.getElementById('yorumMetni').value;
 
-        if (error) {
-            listeDiv.innerHTML = "<p>Veriler yüklenirken hata oluştu.</p>";
-        } else {
-            listeDiv.innerHTML = "";
-            data.forEach(y => {
-                listeDiv.innerHTML += `
-                    <div class="yorum-kart">
-                        <strong>${y.hoca_adi}</strong> 
-                        <span class="puan-yildiz"> | ${'⭐'.repeat(y.puan)}</span>
-                        <p>${y.yorum_metni}</p>
-                    </div>`;
-            });
+            if (!yorum) { return alert("Lütfen bir yorum yaz!"); }
+
+            const { error } = await _supabase
+                .from('yorumlar')
+                .insert([{ hoca_adi: hoca, puan: parseInt(puan), yorum_metni: yorum }]);
+
+            if (error) {
+                alert("Hata oluştu: " + error.message);
+            } else {
+                alert("Puanın başarıyla kaydedildi!");
+                document.getElementById('yorumMetni').value = '';
+                yorumlariGetir(); 
+            }
         }
-    }
 
-    // Sayfa açıldığında yorumları otomatik yükle
-    yorumlariGetir();
-</script>
-
+        yorumlariGetir();
+    </script>
 </body>
 </html>
 
