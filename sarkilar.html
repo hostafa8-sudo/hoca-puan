@@ -2,103 +2,140 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Müzik Listesi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sınıf Müzik Merkezi</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; background: #121212; color: white; padding: 20px; }
-        .box { max-width: 400px; margin: auto; background: #1e1e1e; padding: 20px; border-radius: 10px; border: 1px solid #333; }
-        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #444; box-sizing: border-box; }
-        button { background: #1DB954; color: black; font-weight: bold; cursor: pointer; border: none; }
-        ul { list-style: none; padding: 0; }
-        li { background: #282828; padding: 10px; margin-bottom: 10px; border-radius: 5px; position: relative; }
-        .del { display: none; color: red; float: right; cursor: pointer; background: none; border: none; font-size: 20px; width: auto; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: #000; color: #fff; padding: 15px; margin: 0; }
+        .main-card { background: #121212; padding: 20px; border-radius: 16px; border: 1px solid #333; max-width: 450px; margin: auto; }
+        h2 { color: #1DB954; text-align: center; margin-bottom: 20px; }
+        input { width: 100%; background: #222; border: 1px solid #444; color: #fff; padding: 12px; margin-bottom: 10px; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; background: #1DB954; color: #000; border: none; padding: 14px; border-radius: 30px; font-weight: bold; font-size: 16px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .song-list { margin-top: 25px; }
+        .song-card { background: #181818; padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid #282828; display: flex; justify-content: space-between; align-items: center; position: relative; }
+        .info { flex: 1; }
+        .title { font-weight: bold; color: #fff; display: block; margin-bottom: 4px; }
+        .sub { color: #b3b3b3; font-size: 13px; }
+        .listen-btn { color: #1DB954; text-decoration: none; font-size: 12px; font-weight: bold; margin-top: 8px; display: inline-block; }
+        .vote-btn { background: #282828; color: #1DB954; width: auto; padding: 8px 15px; border-radius: 8px; margin-left: 10px; font-size: 14px; border: 1px solid #1DB954; }
+        .del-x { position: absolute; right: -5px; top: -5px; background: #ff4444; color: #fff; width: 24px; height: 24px; border-radius: 50%; line-height: 24px; text-align: center; display: none; font-weight: bold; cursor: pointer; }
+        #admin-panel { margin-top: 30px; text-align: center; color: #333; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h2 style="color: #1DB954; text-align: center;">🎵 Müzik Listesi</h2>
-    <input type="text" id="ad" placeholder="Şarkı Adı">
-    <input type="text" id="sanat" placeholder="Sanatçı">
-    <input type="text" id="lnk" placeholder="Şarkı Linki">
-    <input type="text" id="kim" placeholder="Ekleyen Adı">
-    <button id="addBtn">LİSTEYE EKLE</button>
-    <ul id="list"></ul>
-    <p id="adminTrigger" style="text-align: center; color: #444; cursor: pointer; font-size: 12px; margin-top: 20px;">Yönetici Girişi</p>
+<div class="main-card">
+    <h2>🎵 Müzik Merkezi</h2>
+    
+    <input type="text" id="sarki_ad" placeholder="Şarkı Adı">
+    <input type="text" id="sanatci" placeholder="Sanatçı">
+    <input type="text" id="link" placeholder="YouTube/Spotify Linki">
+    <input type="text" id="ekleyen" placeholder="Adın">
+    <button onclick="yeniSarkiEkle()">LİSTEYE GÖNDER</button>
+
+    <div class="song-list" id="liste">
+        </div>
+
+    <div id="admin-panel" onclick="merkezKontrol()">Sistem Durumu: Normal</div>
 </div>
 
 <script>
-    const S_URL = "https://xuvrtgvzosobhwpyglsz.supabase.co";
-    const S_KEY = "sb_publishable_uyuYnuRcWL4dxgsBp_lA7w_9KBjIt1s";
-    const supabase = window.supabase.createClient(S_URL, S_KEY);
+    // Supabase Bağlantısı
+    const SUPA_URL = "https://xuvrtgvzosobhwpyglsz.supabase.co";
+    const SUPA_KEY = "sb_publishable_uyuYnuRcWL4dxgsBp_lA7w_9KBjIt1s";
+    const supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
-    // Verileri Yükle
-    async function load() {
+    let merkezModu = false;
+
+    // 1. Şarkıları Getir (Load)
+    async function verileriGetir() {
         const { data, error } = await supabase.from('sarkilar').select('*').order('oy_sayisi', { ascending: false });
-        if (error) return console.error(error);
         
-        const listDiv = document.getElementById('list');
-        listDiv.innerHTML = '';
+        if (error) {
+            console.error("Yükleme hatası:", error);
+            return;
+        }
+
+        const listeBox = document.getElementById('liste');
+        listeBox.innerHTML = '';
+
         data.forEach(item => {
-            listDiv.innerHTML += `<li>
-                <button class="del" onclick="deleteSong(${item.id})">✖</button>
-                <b>${item.sarki_adi}</b><br>
-                <small>${item.sanatci} | ${item.ekleyen}</small><br>
-                <a href="${item.link}" target="_blank" style="color:#1DB954; text-decoration:none;">▶ Dinle</a>
-                <div style="float:right;">
-                    <span>${item.oy_sayisi}</span>
-                    <button onclick="vote(${item.id}, ${item.oy_sayisi})" style="width:auto; padding:5px; margin-left:5px;">👍</button>
+            listeBox.innerHTML += `
+                <div class="song-card">
+                    <div class="info">
+                        <span class="title">${item.sarki_adi}</span>
+                        <span class="sub">${item.sanatci} • <small>${item.ekleyen || 'Anonim'}</small></span><br>
+                        ${item.link ? `<a href="${item.link}" target="_blank" class="listen-link">▶ DİNLE</a>` : ''}
+                    </div>
+                    <div style="text-align:center">
+                        <span style="display:block; font-weight:bold; color:#1DB954; margin-bottom:4px">${item.oy_sayisi}</span>
+                        <button class="vote-btn" onclick="puanVer(${item.id}, ${item.oy_sayisi})">👍</button>
+                    </div>
+                    <div class="del-x" style="display:${merkezModu ? 'block' : 'none'}" onclick="sarkiSil(${item.id})">×</div>
                 </div>
-            </li>`;
+            `;
         });
     }
 
-    // Butona Tıklama Olayı (En Garantili Yöntem)
-    document.getElementById('addBtn').addEventListener('click', async () => {
-        const a = document.getElementById('ad').value;
-        const s = document.getElementById('sanat').value;
-        const l = document.getElementById('lnk').value;
-        const k = document.getElementById('kim').value;
+    // 2. Yeni Şarkı Ekle (Insert)
+    async function yeniSarkiEkle() {
+        const ad = document.getElementById('sarki_ad').value;
+        const san = document.getElementById('sanatci').value;
+        const lnk = document.getElementById('link').value;
+        const kim = document.getElementById('ekleyen').value;
 
-        if(!a || !s) return alert("Şarkı ve Sanatçı boş olamaz!");
+        if (!ad || !san) {
+            alert("En azından Şarkı ve Sanatçı kısmını doldur!");
+            return;
+        }
 
         const { error } = await supabase.from('sarkilar').insert([
-            { sarki_adi: a, sanatci: s, link: l, ekleyen: k, oy_sayisi: 0 }
+            { sarki_adi: ad, sanatci: san, link: lnk, ekleyen: kim, oy_sayisi: 0 }
         ]);
 
-        if(error) {
-            alert("HATA: " + error.message);
+        if (error) {
+            alert("Hata oluştu, tekrar dene: " + error.message);
         } else {
-            alert("Şarkı Eklendi!");
-            location.reload(); // Sayfayı yenileyerek listeyi tazele
+            alert("Şarkı merkeze eklendi!");
+            // Alanları temizle
+            document.getElementById('sarki_ad').value = '';
+            document.getElementById('sanatci').value = '';
+            document.getElementById('link').value = '';
+            verileriGetir(); // Listeyi yenile
         }
-    });
-
-    // Yönetici Girişi
-    document.getElementById('adminTrigger').addEventListener('click', () => {
-        const sifre = prompt("Admin Şifresi:");
-        if(sifre === "1234") {
-            document.querySelectorAll('.del').forEach(d => d.style.display = 'block');
-            alert("Yönetici moduna girildi!");
-        } else {
-            alert("Yanlış şifre!");
-        }
-    });
-
-    async function vote(id, current) {
-        await supabase.from('sarkilar').update({ oy_sayisi: current + 1 }).eq('id', id);
-        load();
     }
 
-    async function deleteSong(id) {
-        if(confirm("Siliyorum?")) {
+    // 3. Puan Ver (Update)
+    async function puanVer(id, suAnki) {
+        await supabase.from('sarkilar').update({ oy_sayisi: suAnki + 1 }).eq('id', id);
+        verileriGetir();
+    }
+
+    // 4. Merkez Kontrol (Admin)
+    function merkezKontrol() {
+        const sifre = prompt("Merkez Kontrol Şifresi:");
+        if (sifre === "1234") {
+            merkezModu = true;
+            document.getElementById('admin-panel').innerText = "Sistem Durumu: YÖNETİCİ AKTİF";
+            verileriGetir(); // Listeyi yenileyip silme butonlarını göster
+            alert("Telefon 'Merkez' moduna alındı. Artık şarkıları silebilirsin.");
+        } else {
+            alert("Yetkisiz Giriş Denemesi!");
+        }
+    }
+
+    // 5. Şarkı Sil (Delete)
+    async function sarkiSil(id) {
+        if (confirm("Bu şarkıyı listeden kaldırmak istediğine emin misin?")) {
             await supabase.from('sarkilar').delete().eq('id', id);
-            load();
+            verileriGetir();
         }
     }
 
-    load();
+    // Sayfa açıldığında verileri çek
+    verileriGetir();
 </script>
+
 </body>
 </html>
+
