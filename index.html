@@ -3,81 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ödev Sistemi</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Hoca Puan - Yönetici Paneli</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #eee; }
-        .box { background: white; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; }
-        input, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { background: #10b981; color: white; font-weight: bold; border: none; cursor: pointer; }
-        li { background: #fff; margin-top: 10px; padding: 10px; border-radius: 5px; list-style: none; border-left: 5px solid #10b981; position: relative; }
-        .del { position: absolute; right: 5px; top: 5px; background: none; border: none; color: red; width: auto; }
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; padding: 15px; display: flex; justify-content: center; }
+        .card { background: #1e1e1e; padding: 20px; border-radius: 15px; border: 1px solid #333; width: 100%; max-width: 400px; }
+        h2 { color: #10b981; text-align: center; margin-top: 0; }
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        input { background: #2d2d2d; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; outline: none; }
+        input:focus { border-color: #10b981; }
+        button { background: #10b981; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #059669; }
+        ul { list-style: none; padding: 0; margin-top: 25px; }
+        li { background: #2d2d2d; margin-bottom: 12px; padding: 15px; border-radius: 10px; border-left: 5px solid #10b981; position: relative; }
+        .subject { color: #10b981; font-weight: bold; font-size: 0.9em; }
+        .text { display: block; margin: 5px 0; font-size: 1.1em; }
+        .date { color: #888; font-size: 0.8em; }
+        .del-btn { position: absolute; right: 10px; top: 10px; color: #ff4444; background: none; border: none; font-size: 20px; cursor: pointer; display: none; }
+        .admin-lock { font-size: 10px; color: #444; text-align: center; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h2>📝 Ödev Ekle</h2>
-    <input type="text" id="sub" placeholder="Ders Adı">
-    <input type="text" id="odv" placeholder="Ödev Detayı">
-    <input type="date" id="tarih">
-    <button onclick="addTask()">Sisteme Gönder</button>
-    <div id="list"></div>
+<div class="card">
+    <h2>⚡ Ödev Yönetimi</h2>
+    <div class="input-group">
+        <input type="text" id="subjectInput" placeholder="Ders (Örn: Fizik)">
+        <input type="text" id="taskInput" placeholder="Ödev Detayı">
+        <input type="date" id="dateInput">
+        <button onclick="addTask()">YAYINLA</button>
+    </div>
+
+    <ul id="taskList"></ul>
+    <div class="admin-lock" onclick="unlockAdmin()">Admin Modu Kapalı</div>
 </div>
 
 <script>
     const S_URL = "https://xuvrtgvzosobhwpyglsz.supabase.co";
     const S_KEY = "sb_publishable_uyuYnuRcWL4dxgsBp_lA7w_9KBjIt1s";
-    
-    // Supabase bağlantısını başlat
-    const supabase = window.supabase.createClient(S_URL, S_KEY);
+    let adminMode = false;
 
+    // Supabase'i Başlat (Garanti Yöntem)
+    const supabaseClient = window.supabase.createClient(S_URL, S_KEY);
+
+    // Verileri Getir
     async function loadTasks() {
-        const { data, error } = await supabase.from('odevler').select('*').order('created_at', { ascending: false });
-        if (error) { console.log(error); return; }
-        
-        const listDiv = document.getElementById('list');
-        listDiv.innerHTML = '';
-        data.forEach(item => {
-            listDiv.innerHTML += `<li>
-                <b>${item.subject}</b><br>${item.odev}<br>
-                <small>Tarih: ${item.deadline}</small>
-                <button class="del" onclick="deleteTask(${item.id})">X</button>
-            </li>`;
-        });
-    }
-
-    async function addTask() {
-        const s = document.getElementById('sub').value;
-        const o = document.getElementById('odv').value;
-        const t = document.getElementById('tarih').value;
-
-        console.log("Gönderiliyor:", s, o, t);
-
-        if(!o) { alert("Ödev kısmını boş bırakma!"); return; }
-
         try {
-            const { data, error } = await supabase.from('odevler').insert([
-                { subject: s, odev: o, deadline: t }
-            ]);
+            const { data, error } = await supabaseClient.from('odevler').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
 
-            if (error) {
-                console.error("Supabase Hatası:", error);
-                alert("Hata oluştu: " + error.message);
-            } else {
-                alert("Ödev başarıyla eklendi!");
-                document.getElementById('sub').value = '';
-                document.getElementById('odv').value = '';
-                loadTasks();
-            }
-        } catch (err) {
-            console.error("Genel Hata:", err);
-            alert("Bağlantı hatası!");
+            const list = document.getElementById('taskList');
+            list.innerHTML = '';
+            data.forEach(item => {
+                list.innerHTML += `
+                    <li>
+                        <span class="subject">${item.subject || 'DERS'}</span>
+                        <span class="text">${item.odev}</span>
+                        <span class="date">🗓 ${item.deadline || 'Süresiz'}</span>
+                        <button class="del-btn" style="display: ${adminMode ? 'block' : 'none'}" onclick="deleteTask(${item.id})">×</button>
+                    </li>`;
+            });
+        } catch (e) {
+            alert("Yükleme Hatası: " + e.message);
         }
     }
 
+    // Ödev Ekle
+    async function addTask() {
+        const sub = document.getElementById('subjectInput').value;
+        const task = document.getElementById('taskInput').value;
+        const date = document.getElementById('dateInput').value;
+
+        if(!task) return alert("Ödev boş olamaz!");
+
+        try {
+            const { error } = await supabaseClient.from('odevler').insert([
+                { subject: sub, odev: task, deadline: date }
+            ]);
+
+            if (error) {
+                alert("Supabase Hatası: " + error.message);
+            } else {
+                document.getElementById('subjectInput').value = '';
+                document.getElementById('taskInput').value = '';
+                loadTasks();
+            }
+        } catch (e) {
+            alert("Bağlantı Hatası: " + e.message);
+        }
+    }
+
+    // Admin Kilidini Aç (Gizli Özellik)
+    function unlockAdmin() {
+        let pass = prompt("Yönetici Şifresi Gir:");
+        if(pass === "1234") { // Şifreyi buradan değiştirebilirsin
+            adminMode = true;
+            document.querySelector('.admin-lock').innerText = "Admin Modu: AKTİF";
+            loadTasks();
+            alert("Yönetici modu açıldı. Artık silebilirsin.");
+        } else {
+            alert("Yanlış şifre!");
+        }
+    }
+
+    // Silme İşlemi
     async function deleteTask(id) {
-        await supabase.from('odevler').delete().eq('id', id);
+        await supabaseClient.from('odevler').delete().eq('id', id);
         loadTasks();
     }
 
