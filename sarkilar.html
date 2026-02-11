@@ -3,25 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sınıf Spotify Listesi</title>
+    <title>Sınıfın Şarkı Listesi</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background: #121212; color: white; padding: 20px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 450px; }
-        h1 { color: #1DB954; text-align: center; font-size: 24px; }
-        .input-card { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
-        input { width: 100%; background: #282828; border: 1px solid #444; color: white; padding: 10px; margin: 5px 0; border-radius: 5px; box-sizing: border-box; }
-        button#addBtn { width: 100%; background: #1DB954; border: none; color: black; font-weight: bold; padding: 12px; border-radius: 25px; cursor: pointer; margin-top: 10px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; padding: 15px; }
+        .container { max-width: 450px; margin: auto; }
+        h1 { color: #1DB954; text-align: center; }
+        .card { background: #1e1e1e; padding: 15px; border-radius: 12px; border: 1px solid #333; margin-bottom: 20px; }
+        input { width: 100%; background: #2d2d2d; border: 1px solid #444; color: white; padding: 10px; margin: 5px 0; border-radius: 8px; box-sizing: border-box; }
+        button#addBtn { width: 100%; background: #1DB954; color: black; font-weight: bold; padding: 12px; border: none; border-radius: 25px; cursor: pointer; margin-top: 10px; }
         
-        .song-item { background: #181818; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #282828; }
-        .song-info { display: flex; flex-direction: column; }
-        .song-title { font-weight: bold; font-size: 1.1em; color: #fff; }
+        .song-item { background: #181818; padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #282828; display: flex; justify-content: space-between; align-items: center; position: relative; }
+        .song-info { display: flex; flex-direction: column; flex-grow: 1; }
+        .song-title { font-weight: bold; color: #fff; }
         .song-artist { color: #b3b3b3; font-size: 0.9em; }
+        .listen-link { color: #1DB954; text-decoration: none; font-size: 0.85em; margin-top: 5px; font-weight: bold; }
         
-        .vote-section { text-align: center; }
-        .vote-count { display: block; font-size: 1.2em; font-weight: bold; color: #1DB954; }
-        .vote-btn { background: #333; border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 18px; }
-        .vote-btn:hover { background: #444; }
+        .vote-box { text-align: center; margin-left: 10px; }
+        .vote-num { display: block; color: #1DB954; font-weight: bold; font-size: 1.2em; }
+        .vote-btn { background: #333; border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        
+        .del-btn { position: absolute; right: -10px; top: -10px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; display: none; }
+        .admin-btn { text-align: center; color: #444; font-size: 10px; margin-top: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -29,75 +32,90 @@
 <div class="container">
     <h1>🎵 Sınıf Listesi</h1>
     
-    <div class="input-card">
-        <input type="text" id="sarkiInp" placeholder="Şarkı Adı">
-        <input type="text" id="sanatciInp" placeholder="Sanatçı">
-        <input type="text" id="isimInp" placeholder="Adın (Opsiyonel)">
-        <button id="addBtn" onclick="sarkiEkle()">Listeye Ekle</button>
+    <div class="card">
+        <input type="text" id="ad" placeholder="Şarkı Adı">
+        <input type="text" id="san" placeholder="Sanatçı">
+        <input type="text" id="lnk" placeholder="Şarkı Linki (YouTube/Spotify)">
+        <input type="text" id="kim" placeholder="Adın">
+        <button id="addBtn" onclick="sarkiEkle()">LİSTEYE EKLE</button>
     </div>
 
     <div id="liste"></div>
+    <div class="admin-btn" onclick="adminAc()">Admin Girişi</div>
 </div>
 
 <script>
     const S_URL = "https://xuvrtgvzosobhwpyglsz.supabase.co";
     const S_KEY = "sb_publishable_uyuYnuRcWL4dxgsBp_lA7w_9KBjIt1s";
     const supabase = window.supabase.createClient(S_URL, S_KEY);
+    let isAdmin = false;
 
-    // Şarkıları Yükle (En çok oy alana göre sırala)
     async function listeyiYukle() {
-        const { data, error } = await supabase
-            .from('sarkilar')
-            .select('*')
-            .order('oy_sayisi', { ascending: false });
+        const { data, error } = await supabase.from('sarkilar').select('*').order('oy_sayisi', { ascending: false });
+        if (error) { alert("Hata: " + error.message); return; }
 
-        if (error) return console.log(error);
-
-        const listeDiv = document.getElementById('liste');
-        listeDiv.innerHTML = '';
-        data.forEach(sarki => {
-            listeDiv.innerHTML += `
+        const div = document.getElementById('liste');
+        div.innerHTML = '';
+        data.forEach(s => {
+            div.innerHTML += `
                 <div class="song-item">
                     <div class="song-info">
-                        <span class="song-title">${sarki.sarki_adi}</span>
-                        <span class="song-artist">${sarki.sanatci} • <small>${sarki.ekleyen || 'Anonim'}</small></span>
+                        <span class="song-title">${s.sarki_adi}</span>
+                        <span class="song-artist">${s.sanatci} • <small>${s.ekleyen}</small></span>
+                        ${s.link ? `<a href="${s.link}" target="_blank" class="listen-link">▶ Hemen Dinle</a>` : ''}
                     </div>
-                    <div class="vote-section">
-                        <span class="vote-count">${sarki.oy_sayisi}</span>
-                        <button class="vote-btn" onclick="oyVer(${sarki.id}, ${sarki.oy_sayisi})">👍</button>
+                    <div class="vote-box">
+                        <span class="vote-num">${s.oy_sayisi}</span>
+                        <button class="vote-btn" onclick="oyVer(${s.id}, ${s.oy_sayisi})">👍</button>
                     </div>
+                    <button class="del-btn" id="del-${s.id}" onclick="sarkiSil(${s.id})">×</button>
                 </div>`;
         });
+        if(isAdmin) adminGoster();
     }
 
-    // Yeni Şarkı Ekle
     async function sarkiEkle() {
-        const ad = document.getElementById('sarkiInp').value;
-        const sanatci = document.getElementById('sanatciInp').value;
-        const kim = document.getElementById('isimInp').value;
+        const ad = document.getElementById('ad').value;
+        const san = document.getElementById('san').value;
+        const lnk = document.getElementById('lnk').value;
+        const kim = document.getElementById('kim').value;
 
-        if(!ad || !sanatci) return alert("Şarkı ve sanatçı yazmalısın!");
+        if(!ad || !san) return alert("Şarkı ve sanatçı şart!");
 
         const { error } = await supabase.from('sarkilar').insert([
-            { sarki_adi: ad, sanatci: sanatci, ekleyen: kim, oy_sayisi: 0 }
+            { sarki_adi: ad, sanatci: san, link: lnk, ekleyen: kim, oy_sayisi: 0 }
         ]);
 
-        if(error) alert(error.message);
-        else {
-            document.getElementById('sarkiInp').value = '';
-            document.getElementById('sanatciInp').value = '';
-            listeyiYukle();
+        if(error) alert("Eklenemedi: " + error.message);
+        else { 
+            document.querySelectorAll('input').forEach(i => i.value = '');
+            listeyiYukle(); 
         }
     }
 
-    // Oy Verme Sistemi
-    async function oyVer(id, mevcutOy) {
-        const { error } = await supabase
-            .from('sarkilar')
-            .update({ oy_sayisi: mevcutOy + 1 })
-            .eq('id', id);
+    async function oyVer(id, mevcut) {
+        await supabase.from('sarkilar').update({ oy_sayisi: mevcut + 1 }).eq('id', id);
+        listeyiYukle();
+    }
 
-        if(!error) listeyiYukle();
+    function adminAc() {
+        const p = prompt("Şifre:");
+        if(p === "1234") {
+            isAdmin = true;
+            adminGoster();
+            alert("Yönetici modu aktif!");
+        }
+    }
+
+    function adminGoster() {
+        document.querySelectorAll('.del-btn').forEach(b => b.style.display = 'block');
+    }
+
+    async function sarkiSil(id) {
+        if(confirm("Silinsin mi?")) {
+            await supabase.from('sarkilar').delete().eq('id', id);
+            listeyiYukle();
+        }
     }
 
     listeyiYukle();
