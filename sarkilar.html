@@ -3,111 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sınıf Müzik Listesi</title>
+    <title>Müzik Listesi</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #121212; color: white; }
-        .box { background: #1e1e1e; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; border: 1px solid #333; }
-        input, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #444; box-sizing: border-box; }
-        input { background: #2d2d2d; color: white; }
-        button { background: #1DB954; color: black; font-weight: bold; border: none; cursor: pointer; }
-        li { background: #282828; margin-top: 10px; padding: 15px; border-radius: 8px; list-style: none; border-left: 5px solid #1DB954; position: relative; }
-        .song-name { font-weight: bold; display: block; font-size: 1.1em; }
-        .artist-name { color: #b3b3b3; font-size: 0.9em; }
-        .link-btn { color: #1DB954; text-decoration: none; font-size: 0.8em; font-weight: bold; margin-top: 5px; display: inline-block; }
-        .vote-section { position: absolute; right: 10px; top: 15px; text-align: center; }
-        .v-num { display: block; color: #1DB954; font-weight: bold; }
-        .del { color: #ff4444; background: none; border: none; cursor: pointer; float: right; font-size: 18px; display: none; }
+        body { font-family: sans-serif; background: #121212; color: white; padding: 20px; }
+        .box { max-width: 400px; margin: auto; background: #1e1e1e; padding: 20px; border-radius: 10px; border: 1px solid #333; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #444; box-sizing: border-box; }
+        button { background: #1DB954; color: black; font-weight: bold; cursor: pointer; border: none; }
+        ul { list-style: none; padding: 0; }
+        li { background: #282828; padding: 10px; margin-bottom: 10px; border-radius: 5px; position: relative; }
+        .del { display: none; color: red; float: right; cursor: pointer; background: none; border: none; font-size: 20px; width: auto; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h2 style="text-align: center; color: #1DB954;">🎵 Sınıf Listesi</h2>
-    <input type="text" id="s_ad" placeholder="Şarkı Adı">
-    <input type="text" id="s_sanat" placeholder="Sanatçı">
-    <input type="text" id="s_link" placeholder="YouTube/Spotify Linki">
-    <input type="text" id="s_kim" placeholder="Adın">
-    <button onclick="addTask()">Listeye Ekle</button>
-    <div id="list"></div>
-    <p onclick="adminModu()" style="font-size: 10px; color: #333; text-align: center; margin-top: 20px; cursor: pointer;">Yönetici Girişi</p>
+    <h2 style="color: #1DB954; text-align: center;">🎵 Müzik Listesi</h2>
+    <input type="text" id="ad" placeholder="Şarkı Adı">
+    <input type="text" id="sanat" placeholder="Sanatçı">
+    <input type="text" id="lnk" placeholder="Şarkı Linki">
+    <input type="text" id="kim" placeholder="Ekleyen Adı">
+    <button id="addBtn">LİSTEYE EKLE</button>
+    <ul id="list"></ul>
+    <p id="adminTrigger" style="text-align: center; color: #444; cursor: pointer; font-size: 12px; margin-top: 20px;">Yönetici Girişi</p>
 </div>
 
 <script>
-    // Senin Supabase Bilgilerin
     const S_URL = "https://xuvrtgvzosobhwpyglsz.supabase.co";
     const S_KEY = "sb_publishable_uyuYnuRcWL4dxgsBp_lA7w_9KBjIt1s";
     const supabase = window.supabase.createClient(S_URL, S_KEY);
 
-    // Listeleme Fonksiyonu (Ödev sistemindeki loadTasks gibi)
-    async function loadTasks() {
+    // Verileri Yükle
+    async function load() {
         const { data, error } = await supabase.from('sarkilar').select('*').order('oy_sayisi', { ascending: false });
-        if (error) { console.log(error); return; }
+        if (error) return console.error(error);
         
         const listDiv = document.getElementById('list');
         listDiv.innerHTML = '';
         data.forEach(item => {
             listDiv.innerHTML += `<li>
-                <button class="del" onclick="deleteTask(${item.id})">✖</button>
-                <span class="song-name">${item.sarki_adi}</span>
-                <span class="artist-name">${item.sanatci} • <small>${item.ekleyen || 'Anonim'}</small></span>
-                ${item.link ? `<a href="${item.link}" target="_blank" class="link-btn">▶ DİNLE</a>` : ''}
-                <div class="vote-section">
-                    <span class="v-num">${item.oy_sayisi}</span>
-                    <button style="width:auto; padding:5px 10px;" onclick="oyVer(${item.id}, ${item.oy_sayisi})">👍</button>
+                <button class="del" onclick="deleteSong(${item.id})">✖</button>
+                <b>${item.sarki_adi}</b><br>
+                <small>${item.sanatci} | ${item.ekleyen}</small><br>
+                <a href="${item.link}" target="_blank" style="color:#1DB954; text-decoration:none;">▶ Dinle</a>
+                <div style="float:right;">
+                    <span>${item.oy_sayisi}</span>
+                    <button onclick="vote(${item.id}, ${item.oy_sayisi})" style="width:auto; padding:5px; margin-left:5px;">👍</button>
                 </div>
             </li>`;
         });
     }
 
-    // Ekleme Fonksiyonu (Çalışan ödev sistemiyle aynı mantık)
-    async function addTask() {
-        const ad = document.getElementById('s_ad').value;
-        const san = document.getElementById('s_sanat').value;
-        const lnk = document.getElementById('s_link').value;
-        const kim = document.getElementById('s_kim').value;
+    // Butona Tıklama Olayı (En Garantili Yöntem)
+    document.getElementById('addBtn').addEventListener('click', async () => {
+        const a = document.getElementById('ad').value;
+        const s = document.getElementById('sanat').value;
+        const l = document.getElementById('lnk').value;
+        const k = document.getElementById('kim').value;
 
-        if(!ad) { alert("Şarkı adı boş olamaz!"); return; }
+        if(!a || !s) return alert("Şarkı ve Sanatçı boş olamaz!");
 
         const { error } = await supabase.from('sarkilar').insert([
-            { sarki_adi: ad, sanatci: san, link: lnk, ekleyen: kim, oy_sayisi: 0 }
+            { sarki_adi: a, sanatci: s, link: l, ekleyen: k, oy_sayisi: 0 }
         ]);
 
-        if (error) {
-            alert("Hata: " + error.message);
+        if(error) {
+            alert("HATA: " + error.message);
         } else {
-            alert("Şarkı eklendi!");
-            document.getElementById('s_ad').value = '';
-            document.getElementById('s_sanat').value = '';
-            document.getElementById('s_link').value = '';
-            loadTasks();
+            alert("Şarkı Eklendi!");
+            location.reload(); // Sayfayı yenileyerek listeyi tazele
         }
+    });
+
+    // Yönetici Girişi
+    document.getElementById('adminTrigger').addEventListener('click', () => {
+        const sifre = prompt("Admin Şifresi:");
+        if(sifre === "1234") {
+            document.querySelectorAll('.del').forEach(d => d.style.display = 'block');
+            alert("Yönetici moduna girildi!");
+        } else {
+            alert("Yanlış şifre!");
+        }
+    });
+
+    async function vote(id, current) {
+        await supabase.from('sarkilar').update({ oy_sayisi: current + 1 }).eq('id', id);
+        load();
     }
 
-    // Oy Verme
-    async function oyVer(id, mevcut) {
-        await supabase.from('sarkilar').update({ oy_sayisi: mevcut + 1 }).eq('id', id);
-        loadTasks();
-    }
-
-    // Silme
-    async function deleteTask(id) {
-        if(confirm("Silinsin mi?")) {
+    async function deleteSong(id) {
+        if(confirm("Siliyorum?")) {
             await supabase.from('sarkilar').delete().eq('id', id);
-            loadTasks();
+            load();
         }
     }
 
-    // Yönetici
-    function adminModu() {
-        if(prompt("Şifre:") === "1234") {
-            document.querySelectorAll('.del').forEach(b => b.style.display = 'block');
-            alert("Yönetici modu açıldı!");
-        }
-    }
-
-    loadTasks();
+    load();
 </script>
 </body>
 </html>
-
