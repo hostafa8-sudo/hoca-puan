@@ -3,106 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sınıf Ödev Takibi</title>
+    <title>Sınıf Ödev Panosu</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
-        h2 { color: #3ecf8e; text-align: center; margin-bottom: 20px; }
-        .input-group { display: flex; flex-direction: column; gap: 10px; }
-        input, button { padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; }
-        button { background: #3ecf8e; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #34b27b; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 15px; display: flex; justify-content: center; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { text-align: center; color: #10b981; margin-bottom: 20px; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        button#addBtn { width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        button#addBtn:hover { background: #059669; }
         ul { list-style: none; padding: 0; margin-top: 25px; }
-        li { background: #fff; border-left: 5px solid #3ecf8e; margin-bottom: 10px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .task-info { display: flex; flex-direction: column; }
-        .subject-text { font-weight: bold; font-size: 1.1rem; color:#3ecf8e; }
-        .task-text { font-size: 1rem; color: #333; margin-top: 3px; }       .task-date { font-size: 0.8rem; color: #e63946; margin-top: 5px; font-weight: 500; }
-       .delete-btn { color: #888; cursor: pointer; font-size: 1.2rem; border: none; background: none; width: auto; padding: 0; }
-  </style>
-</hed>
-<body
-<div class="button">    <h2>📚 Ortak Ödev Panosu</h2>
-  <div class="input-group">
-       <input type="text" id="subjectInput" placeholder="Dersin adı (Örn: Matematik)">
-      <input type="text" id="taskInput" placeholder="Ödev nedir? (Örn: Test 5 çözülecek)">
+        li { background: #fff; border: 1px solid #e5e7eb; margin-bottom: 12px; padding: 15px; border-radius: 10px; position: relative; border-left: 6px solid #10b981; }
+        .subject-tag { font-weight: bold; color: #059669; font-size: 0.9em; text-transform: uppercase; }
+        .task-content { display: block; margin: 8px 0; font-size: 1.1em; color: #1f2937; }
+        .date-tag { font-size: 0.85em; color: #ef4444; font-weight: 500; }
+        .del-btn { position: absolute; right: 10px; top: 10px; color: #9ca3af; cursor: pointer; border: none; background: none; font-size: 18px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>📚 Ödev Panosu</h2>
+    <div class="input-group">
+        <input type="text" id="subjectInput" placeholder="Dersin Adı (Örn: Matematik)">
+        <input type="text" id="taskInput" placeholder="Ödev Detayı (Örn: Sayfa 50)">
         <input type="date" id="dateInput">
-        <button onclick="addTask()">Ödevi Herkese Yayınla</button>
+        <button id="addBtn" onclick="addTask()">Ödevi Herkese Gönder</button>
     </div>
     <ul id="taskList"></ul>
-</div
+</div>
 
 <script>
+    // Senin Supabase Bilgilerin
     const SUB_URL = "https://xuvrtgvzosobhwpyglsz.supabase.co";
-    const SUB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1dnJ0Z3Z6b3NvYmh3cHlnbHN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MzUyMTksImV4cCI6MjA4NjMxMTIxOX0.BihvfJ7LE-ZtbS5t59osSJxUWyQZImdGrSaswfBUCDU";
+    const SUB_KEY = "sb_publishable_uyuYnuRcWL4dxgsBp_lA7w_9KBjIt1s";
     const supabaseClient = supabase.createClient(SUB_URL, SUB_KEY);
 
+    // Ödevleri Listele
     async function loadTasks() {
         let { data: odevler, error } = await supabaseClient
             .from('odevler')
             .select('*')
             .order('created_at', { ascending: false });
 
-        if (error) {
-            console.error("Yükleme Hatası:", error);
-            return;
-        }
-
+        if (error) return console.error("Hata:", error);
+        
         const list = document.getElementById('taskList');
         list.innerHTML = '';
         odevler.forEach(item => {
-            list.innerHTML += `
-                <li>
-                    <div class="task-info">
-                        <span class="subject-text">${item.subject || 'Ders Belirtilmedi'}</span>
-                        <span class="task-text">${item.text}</span>
-                        <span class="task-date">⏳ Son Tarih: ${item.deadline || 'Belirtilmedi'}</span>
-                    </div>
-                    <button class="delete-btn" onclick="deleteTask(${item.id})">&times;</button>
-                </li>`;
+            list.innerHTML += `<li>
+                <span class="subject-tag">${item.subject || 'Genel'}</span>
+                <span class="task-content">${item.odev}</span>
+                <span class="date-tag">📅 Son Tarih: ${item.deadline || 'Belirtilmedi'}</span>
+                <button class="del-btn" onclick="deleteTask(${item.id})">×</button>
+            </li>`;
         });
     }
 
+    // Yeni Ödev Ekle
     async function addTask() {
-        const subjectInput = document.getElementById('subjectInput');
-        const textInput = document.getElementById('taskInput');
-        const dateInput = document.getElementById('dateInput');
+        const sub = document.getElementById('subjectInput');
+        const task = document.getElementById('taskInput');
+        const date = document.getElementById('dateInput');
         
-        if(!textInput.value.trim()) {
-            alert("Lütfen ödev içeriğini yazın!");
-            return;
-        }
+        if(!task.value) return alert("Ödev içeriğini boş bırakamazsın!");
 
+        // Sütun isimlerini senin tablona (odev, subject, deadline) göre eşitledik
         const { error } = await supabaseClient
             .from('odevler')
-            .insert([{ 
-                subject: subjectInput.value,
-                text: textInput.value, 
-                deadline: dateInput.value || "Belirtilmedi" 
-            }]);
+            .insert([
+                { 
+                    subject: sub.value, 
+                    odev: task.value, 
+                    deadline: date.value 
+                }
+            ]);
 
         if(error) {
-            console.error("Supabase Hatası:", error);
-            alert("Hata: " + error.message + "\n\nNot: Supabase panelinden RLS ayarlarını 'Disable' yaptığından emin ol.");
+            alert("Hata oluştu: " + error.message);
         } else {
-            subjectInput.value = '';
-            textInput.value = '';
-            dateInput.value = '';
-            loadTasks();
-        }
-    }
-
-    async function deleteTask(id) {
-        const { error } = await supabaseClient
-            .from('odevler')
-            .delete()
-            .eq('id', id);
-        
-        if(!error) loadTasks();
-    }
-
-    loadTasks();
-</script>
-</body>
-</html>
+            sub.value = ''; task
 
