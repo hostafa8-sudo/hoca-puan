@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sınıf Spotify Listesi</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #121212; color: white; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 450px; }
+        h1 { color: #1DB954; text-align: center; font-size: 24px; }
+        .input-card { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
+        input { width: 100%; background: #282828; border: 1px solid #444; color: white; padding: 10px; margin: 5px 0; border-radius: 5px; box-sizing: border-box; }
+        button#addBtn { width: 100%; background: #1DB954; border: none; color: black; font-weight: bold; padding: 12px; border-radius: 25px; cursor: pointer; margin-top: 10px; }
+        
+        .song-item { background: #181818; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #282828; }
+        .song-info { display: flex; flex-direction: column; }
+        .song-title { font-weight: bold; font-size: 1.1em; color: #fff; }
+        .song-artist { color: #b3b3b3; font-size: 0.9em; }
+        
+        .vote-section { text-align: center; }
+        .vote-count { display: block; font-size: 1.2em; font-weight: bold; color: #1DB954; }
+        .vote-btn { background: #333; border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 18px; }
+        .vote-btn:hover { background: #444; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎵 Sınıf Listesi</h1>
+    
+    <div class="input-card">
+        <input type="text" id="sarkiInp" placeholder="Şarkı Adı">
+        <input type="text" id="sanatciInp" placeholder="Sanatçı">
+        <input type="text" id="isimInp" placeholder="Adın (Opsiyonel)">
+        <button id="addBtn" onclick="sarkiEkle()">Listeye Ekle</button>
+    </div>
+
+    <div id="liste"></div>
+</div>
+
+<script>
+    const S_URL = "https://xuvrtgvzosobhwpyglsz.supabase.co";
+    const S_KEY = "sb_publishable_uyuYnuRcWL4dxgsBp_lA7w_9KBjIt1s";
+    const supabase = window.supabase.createClient(S_URL, S_KEY);
+
+    // Şarkıları Yükle (En çok oy alana göre sırala)
+    async function listeyiYukle() {
+        const { data, error } = await supabase
+            .from('sarkilar')
+            .select('*')
+            .order('oy_sayisi', { ascending: false });
+
+        if (error) return console.log(error);
+
+        const listeDiv = document.getElementById('liste');
+        listeDiv.innerHTML = '';
+        data.forEach(sarki => {
+            listeDiv.innerHTML += `
+                <div class="song-item">
+                    <div class="song-info">
+                        <span class="song-title">${sarki.sarki_adi}</span>
+                        <span class="song-artist">${sarki.sanatci} • <small>${sarki.ekleyen || 'Anonim'}</small></span>
+                    </div>
+                    <div class="vote-section">
+                        <span class="vote-count">${sarki.oy_sayisi}</span>
+                        <button class="vote-btn" onclick="oyVer(${sarki.id}, ${sarki.oy_sayisi})">👍</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    // Yeni Şarkı Ekle
+    async function sarkiEkle() {
+        const ad = document.getElementById('sarkiInp').value;
+        const sanatci = document.getElementById('sanatciInp').value;
+        const kim = document.getElementById('isimInp').value;
+
+        if(!ad || !sanatci) return alert("Şarkı ve sanatçı yazmalısın!");
+
+        const { error } = await supabase.from('sarkilar').insert([
+            { sarki_adi: ad, sanatci: sanatci, ekleyen: kim, oy_sayisi: 0 }
+        ]);
+
+        if(error) alert(error.message);
+        else {
+            document.getElementById('sarkiInp').value = '';
+            document.getElementById('sanatciInp').value = '';
+            listeyiYukle();
+        }
+    }
+
+    // Oy Verme Sistemi
+    async function oyVer(id, mevcutOy) {
+        const { error } = await supabase
+            .from('sarkilar')
+            .update({ oy_sayisi: mevcutOy + 1 })
+            .eq('id', id);
+
+        if(!error) listeyiYukle();
+    }
+
+    listeyiYukle();
+</script>
+</body>
+</html>
+
