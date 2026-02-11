@@ -16,24 +16,21 @@
         ul { list-style: none; padding: 0; margin-top: 25px; }
         li { background: #fff; border-left: 5px solid #3ecf8e; margin-bottom: 10px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
         .task-info { display: flex; flex-direction: column; }
-        .subject-text { font-weight: bold; font-size: 1.1rem; color: #3ecf8e; }
-        .task-text { font-size: 1rem; color: #333; margin-top: 3px; }
-        .task-date { font-size: 0.8rem; color: #e63946; margin-top: 5px; font-weight: 500; }
-        .delete-btn { color: #888; cursor: pointer; font-size: 1.2rem; border: none; background: none; width: auto; padding: 0; }
-    </style>
-</head>
-<body>
-
-<div class="card">
-    <h2>📚 Ortak Ödev Panosu</h2>
-    <div class="input-group">
-        <input type="text" id="subjectInput" placeholder="Dersin adı (Örn: Matematik)">
-        <input type="text" id="taskInput" placeholder="Ödev nedir? (Örn: Test 5 çözülecek)">
+        .subject-text { font-weight: bold; font-size: 1.1rem; color:#3ecf8e; }
+        .task-text { font-size: 1rem; color: #333; margin-top: 3px; }       .task-date { font-size: 0.8rem; color: #e63946; margin-top: 5px; font-weight: 500; }
+       .delete-btn { color: #888; cursor: pointer; font-size: 1.2rem; border: none; background: none; width: auto; padding: 0; }
+  </style>
+</hed>
+<body
+<div class="button">    <h2>📚 Ortak Ödev Panosu</h2>
+  <div class="input-group">
+       <input type="text" id="subjectInput" placeholder="Dersin adı (Örn: Matematik)">
+      <input type="text" id="taskInput" placeholder="Ödev nedir? (Örn: Test 5 çözülecek)">
         <input type="date" id="dateInput">
         <button onclick="addTask()">Ödevi Herkese Yayınla</button>
     </div>
     <ul id="taskList"></ul>
-</div>
+</div
 
 <script>
     const SUB_URL = "https://xuvrtgvzosobhwpyglsz.supabase.co";
