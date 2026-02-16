@@ -1,29 +1,38 @@
-cat > Eyapay.html << EOF
+cat > index.html << 'EOF'
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hukuk Projesi</title>
+    <title>Urkagina Hukuk Reformu</title>
     <style>
-        body { font-family: sans-serif; background: #f4f4f4; display: flex; justify-content: center; padding: 20px; }
-        .box { max-width: 500px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); text-align: center; }
-        img { width: 100%; border-radius: 5px; margin-bottom: 15px; background: #eee; min-height: 200px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-        th, td { border: 1px solid #ddd; padding: 10px; }
-        th { background: #3498db; color: white; }
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 10px; margin: 0; }
+        .card { max-width: 400px; background: white; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); overflow: hidden; margin-top: 20px; }
+        .header { background: #1a73e8; color: white; padding: 15px; text-align: center; font-size: 1.2rem; font-weight: bold; }
+        .img-container { width: 100%; height: 300px; background: #eee; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        img { width: 100%; height: 100%; object-fit: cover; }
+        .content { padding: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f8f9fa; color: #555; width: 40%; }
+        .footer { padding: 10px; text-align: center; font-size: 0.7rem; color: #888; border-top: 1px solid #eee; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h2>⚖️ Urkagina Hukuk Reformu</h2>
-        <img src="hukuk.jpg" alt="Resim Yuklenemedi">
-        
-        <table>
-            <tr><th>Ürün</th><td>Hukuk AI Görseli</td></tr>
-            <tr><th>Benzerlik</th><td>Tablet ve Adalet teması aynı.</td></tr>
-            <tr><th>Fark</th><td>AI daha net ve renkli.</td></tr>
-        </table>
+    <div class="card">
+        <div class="header">⚖️ Urkagina Hukuk Reformu</div>
+        <div class="img-container">
+            <img src="https://images.unsplash.com/photo-1505664194779-8beaceb93744?auto=format&fit=crop&q=80&w=500" alt="Hukuk">
+        </div>
+        <div class="content">
+            <table>
+                <tr><th>Ürün</th><td>Hukuk AI Görseli</td></tr>
+                <tr><th>Kaynaklar</th><td>Sümer Hukuk Belgeleri</td></tr>
+                <tr><th>Benzerlik</th><td>Adalet arayışı ortaktır.</td></tr>
+                <tr><th>Farklılık</th><td>AI görseli daha canlıdır.</td></tr>
+            </table>
+        </div>
+        <div class="footer">Bu proje Termux & Gemini ile hazırlandı.</div>
     </div>
 </body>
 </html>
