@@ -1,0 +1,46 @@
+cat > index.html << EOF
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarihin İlk Hukuk Reformu</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f3; color: #333; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { max-width: 800px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        img { width: 100%; border-radius: 12px; margin: 25px 0; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+        th, td { border: 1px solid #dfe6e9; padding: 15px; text-align: left; }
+        th { background-color: #3498db; color: white; text-transform: uppercase; letter-spacing: 1px; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        .footer { margin-top: 30px; text-align: center; font-style: italic; color: #95a5a6; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚖️ İlk Yazılı Hukuk Reformu: Urkagina</h1>
+        
+        <img src="hukuk.jpg" alt="Hukuk Reformu Görseli">
+        
+        <h3>Proje Sorgulama Tablosu</h3>
+        <table>
+            <tr>
+                <th>Hazırlanan Ürün</th>
+                <th>İncelenecek Kaynaklar</th>
+                <th>Benzerlikler</th>
+                <th>Farklılıklar</th>
+            </tr>
+            <tr>
+                <td>Hukuk Temalı AI Görseli</td>
+                <td>Sümer Medeniyeti Hukuk Belgeleri</td>
+                <td>Adalet arayışı ve tarihi atmosfer kaynaklarla örtüşmektedir.</td>
+                <td>Yapay zeka, tarihi verileri modern bir görselleştirme ile sunmuştur.</td>
+            </tr>
+        </table>
+        
+        <div class="footer">Bu dijital proje Termux ve Yapay Zeka kullanılarak geliştirilmiştir.</div>
+    </div>
+</body>
+</html>
+EOF
