@@ -13,7 +13,7 @@
         h2 { color: var(--primary); font-size: 1.2rem; margin-bottom: 1.5rem; min-height: 3em; }
         .option-btn { display: block; width: 100%; padding: 12px 20px; margin: 10px 0; border: 2px solid #edf2f7; border-radius: 10px; background: white; cursor: pointer; text-align: left; transition: 0.3s; font-size: 1rem; outline: none; }
         
-        /* Renk Sınıfları */
+        /* Renk Geri Bildirimleri */
         .correct { background-color: var(--success) !important; color: white !important; border-color: var(--success) !important; }
         .wrong { background-color: var(--error) !important; color: white !important; border-color: var(--error) !important; }
         .disabled { pointer-events: none; opacity: 0.8; }
@@ -26,7 +26,7 @@
 
 <div id="quiz-container">
     <div id="quiz-box">
-        <div class="progress" id="progress">Yükleniyor...</div>
+        <div class="progress" id="progress">Başlatılıyor...</div>
         <h2 id="question">Soru yükleniyor...</h2>
         <div id="options"></div>
     </div>
@@ -44,17 +44,23 @@
     const SB_KEY = "Sb_publishable_uyuYnuRcWL4dxgsBp_lA7w_9KBjIt1s";
     const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
-    // Notlarından derlenen sorular
-    let questions = [
-        { s: "Yazısız bir kuralın hukuk sayılabilmesi için 'toplumun kuralın zorunlu olduğuna dair sarsılmaz inancı' hangi unsurdur?", o: ["Maddi Unsur", "Manevi Unsur", "Siyasi Unsur", "Dini Unsur"], c: 1 },
-        { s: "Türk töresinde 'adalet' (Könilik), 'iyilik' (Uzluk) ve 'eşitlik' (Tüzlük) ilkeleri için hangisi söylenebilir?", o: ["Kurultayda değiştirilir", "Asla değişmez temel ilkelerdir", "Sadece yazılı hukukta vardır", "Zamanla önemini yitirmiştir"], c: 1 },
-        { s: "Mezopotamya'da yazılı metinler öncesinde kökleşmiş, suçluya suçun aynısının uygulanması esasına dayanan anlayış nedir?", o: ["Töre", "Kısas", "Uygulama", "Dinsel Bağlantı"], c: 1 },
-        { s: "Tarihte bilinen ilk yazılı kanunları yapan Sümer kralı kimdir?", o: ["Hamurabi", "Urugakina", "Nabukadnezar", "Sargon"], c: 1 },
-        { s: "Babil (Hamurabi) kanunlarını diğerlerinden ayıran en belirgin özellik nedir?", o: ["Daha yumuşak olması", "Çok sert ve sistematik olması", "Sadece sözlü olması", "Dini unsurlar içermemesi"], c: 1 }
+    // Ana Soru Listesi (c: Doğru cevabın metni)
+    const rawQuestions = [
+        { s: "Yazısız hukukun 'manevi unsuru' nedir?", o: ["Sürekli uygulama", "Toplumun kuralın zorunluluğuna inancı", "Kralın emri", "Savaş kanunları"], c: "Toplumun kuralın zorunluluğuna inancı" },
+        { s: "Türk töresinde 'Könilik' ilkesi ne anlama gelir?", o: ["İyilik", "Eşitlik", "Adalet", "Güçlülük"], c: "Adalet" },
+        { s: "Mezopotamya'da 'Kısas' ilkesinin karşılığı nedir?", o: ["Para cezası", "Göze göz, dişe diş", "Sürgün", "Hapis cezası"], c: "Göze göz, dişe diş" },
+        { s: "Tarihte bilinen ilk yazılı kanunları yapan Sümer kralı kimdir?", o: ["Hamurabi", "Urugakina", "Sargon", "Anu"], c: "Urugakina" },
+        { s: "Babil kanunlarının en belirgin sert özelliği nedir?", o: ["Kısas esaslı olması", "Sadece para cezası olması", "Sözlü olması", "Dini olmaması"], c: "Kısas esaslı olması" }
     ];
 
-    // Soruları Karıştırma Fonksiyonu (Shuffle)
-    questions = questions.sort(() => Math.random() - 0.5);
+    // --- Karıştırma Algoritması ---
+    // Hem soruları hem de her sorunun içindeki şıkları karıştırıyoruz
+    let questions = rawQuestions
+        .sort(() => Math.random() - 0.5) // Soruları karıştır
+        .map(q => ({
+            ...q,
+            o: [...q.o].sort(() => Math.random() - 0.5) // Şıkları karıştır
+        }));
 
     let currentIdx = 0;
     let score = 0;
@@ -72,38 +78,36 @@
             const btn = document.createElement("button");
             btn.className = "option-btn";
             btn.innerText = `${String.fromCharCode(65 + i)}) ${opt}`;
-            btn.onclick = () => handleAnswer(i, btn);
+            btn.onclick = () => handleAnswer(opt, btn);
             optionsDiv.appendChild(btn);
         });
     }
 
-    async function handleAnswer(selectedIdx, clickedBtn) {
+    async function handleAnswer(selectedText, clickedBtn) {
         if (!canClick) return;
         canClick = false;
 
-        const correctIdx = questions[currentIdx].c;
+        const correctText = questions[currentIdx].c;
         const buttons = document.querySelectorAll(".option-btn");
 
         // Renklendirme Mantığı
-        if (selectedIdx === correctIdx) {
+        if (selectedText === correctText) {
             clickedBtn.classList.add("correct");
             score++;
         } else {
             clickedBtn.classList.add("wrong");
-            buttons[correctIdx].classList.add("correct"); // Doğru olanı da göster
+            // Yanlış seçilince doğru olanı bul ve yeşil yap
+            buttons.forEach(btn => {
+                if (btn.innerText.includes(correctText)) btn.classList.add("correct");
+            });
         }
 
-        // Diğer butonları etkisizleştir
         buttons.forEach(btn => btn.classList.add("disabled"));
 
-        // 1.5 saniye bekle ve sonraki soruya geç
         setTimeout(() => {
             currentIdx++;
-            if (currentIdx < questions.length) {
-                loadQuestion();
-            } else {
-                showResult();
-            }
+            if (currentIdx < questions.length) loadQuestion(); 
+            else showResult();
         }, 1500);
     }
 
@@ -114,7 +118,7 @@
 
         try {
             const { error } = await _supabase.from('skorlar').insert([{ puan: score }]);
-            document.getElementById("status").innerText = error ? "❌ Kayıt başarısız" : "✅ Skor Supabase'e kaydedildi!";
+            document.getElementById("status").innerText = error ? "❌ Kayıt başarısız" : "✅ Skor kaydedildi!";
         } catch (err) {
             document.getElementById("status").innerText = "❌ Bağlantı hatası";
         }
@@ -122,7 +126,6 @@
 
     loadQuestion();
 </script>
-
 </body>
 </html>
 
