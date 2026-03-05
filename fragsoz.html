@@ -1,0 +1,237 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fragsöz - Kitap Fragman Platformu</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --bg: #f7fafc;
+            --white: #ffffff;
+            --text: #2d3748;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            margin: 0;
+            color: var(--text);
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .search-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .book-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .book-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .book-card img {
+            width: 100%;
+            height: 350px;
+            object-fit: cover;
+        }
+
+        .book-info {
+            padding: 15px;
+        }
+
+        .book-info h3 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .book-info p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            background: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        /* Modal Stil */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 10px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .btn-video {
+            display: block;
+            text-align: center;
+            background: #ff0000;
+            color: white;
+            padding: 12px;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📚 FRAGSÖZ</h1>
+    <p>Kitapların Hikayesini Keşfedin</p>
+</header>
+
+<div class="container">
+    <div class="search-section">
+        <input type="text" id="search" placeholder="Kitap veya yazar ara..." onkeyup="filterBooks()">
+    </div>
+
+    <div class="books-grid" id="booksGrid">
+        </div>
+</div>
+
+<div id="bookModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2 id="modalTitle"></h2>
+        <h4 id="modalAuthor" style="color: #666;"></h4>
+        <p id="modalSummary"></p>
+        <a href="#" id="modalVideo" target="_blank" class="btn-video">▶️ FRAGMANI İZLE</a>
+    </div>
+</div>
+
+<script>
+    // Script dosyasındaki verileri buraya gömdük
+    const books = [
+        {
+            id: 1,
+            title: "Suç ve Ceza",
+            author: "Fyodor Dostoyevski",
+            category: "Klasik",
+            summary: "Raskolnikov adlı genç bir adamın işlediği cinayet ve sonrasında yaşadığı vicdan muhasebesi.",
+            coverUrl: "https://i.dr.com.tr/cache/600x600-0/originals/0000000064036-1.jpg",
+            videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        },
+        {
+            id: 2,
+            title: "1984",
+            author: "George Orwell",
+            category: "Distopya",
+            summary: "Totaliter bir rejimin hüküm sürdüğü gelecekte, bireyin özgürlüğü ve düşünce sisteminin kontrolü.",
+            coverUrl: "https://i.dr.com.tr/cache/600x600-0/originals/0001844952001-1.jpg",
+            videoUrl: "https://www.youtube.com/watch?v=vVTeI0asW9I"
+        },
+        {
+            id: 3,
+            title: "Savaş ve Barış",
+            author: "Lev Tolstoy",
+            category: "Klasik",
+            summary: "Napolyon savaşları döneminde Rus aristokrasisinin yaşamı ve aşk hikayesi.",
+            coverUrl: "https://i.dr.com.tr/cache/600x600-0/originals/0001839988001-1.jpg",
+            videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        }
+    ];
+
+    function displayBooks(data) {
+        const grid = document.getElementById('booksGrid');
+        grid.innerHTML = data.map(book => `
+            <div class="book-card" onclick="openModal(${book.id})">
+                <img src="${book.coverUrl}" alt="${book.title}">
+                <div class="book-info">
+                    <h3>${book.title}</h3>
+                    <p>${book.author}</p>
+                    <span class="badge">${book.category}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function filterBooks() {
+        const val = document.getElementById('search').value.toLowerCase();
+        const filtered = books.filter(b => b.title.toLowerCase().includes(val) || b.author.toLowerCase().includes(val));
+        displayBooks(filtered);
+    }
+
+    function openModal(id) {
+        const book = books.find(b => b.id === id);
+        document.getElementById('modalTitle').innerText = book.title;
+        document.getElementById('modalAuthor').innerText = book.author;
+        document.getElementById('modalSummary').innerText = book.summary;
+        document.getElementById('modalVideo').href = book.videoUrl;
+        document.getElementById('bookModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('bookModal').style.display = 'none';
+    }
+
+    // Başlangıçta kitapları yükle
+    displayBooks(books);
+</script>
+
+</body>
+</html>
+
